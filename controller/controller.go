@@ -6,7 +6,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/ChavezJan/dc-final/scheduler"
 	"go.nanomsg.org/mangos"
 	"go.nanomsg.org/mangos/protocol/pub"
 
@@ -21,6 +20,7 @@ type workloads struct {
 	workload_name string
 	wl_status     bool
 	wl_filter     string
+	imgEditada    []string
 }
 
 type savedImages struct {
@@ -30,6 +30,7 @@ type savedImages struct {
 }
 
 var images []savedImages
+var imgIDs []string
 var workloadCtrl []workloads
 
 func SaveWorkload(name string, token string, status bool, filtro string) {
@@ -40,15 +41,38 @@ func SaveWorkload(name string, token string, status bool, filtro string) {
 		wl_status:     status,
 		wl_filter:     filtro,
 	}
-	/*
-		if len(workloadCtrl) > 0 {
-			worker := append(workloadCtrl, len(workloadCtrl)-1)
+
+	workloadCtrl = append(workloadCtrl, worker)
+}
+
+func GetImgIDs(wkName string) []string {
+
+	for i := range images {
+		if images[i].image_type == "Original" {
+			images[i].image_type = "Editada"
+
+			for x := range workloadCtrl {
+				if workloadCtrl[x].workload_name == wkName {
+					workloadCtrl[x].imgEditada = append(workloadCtrl[x].imgEditada, images[i].image_ID)
+					return workloadCtrl[x].imgEditada
+				}
+			}
+
 		}
-		if len(workloadCtrl) == nil {
+	}
+	return nil
+}
 
-		}*/
+func SaveImage(name string, token string, imgType string) {
 
-	fmt.Println(worker)
+	image := savedImages{
+		image_file_name: name,
+		image_ID:        token,
+		image_type:      imgType,
+	}
+
+	images = append(images, image)
+	imgIDs = append(imgIDs, image.image_ID)
 
 }
 
@@ -63,11 +87,16 @@ func date() string {
 
 func Active_workloads() string {
 
-	var disponibles string
+	var workerInActive string
 
-	disponibles = scheduler.Active_workloads()
+	for x := range workloadCtrl {
+		if workloadCtrl[x].wl_status == true {
+			workerInActive += workloadCtrl[x].workload_id
+			workerInActive += "/"
+		}
+	}
 
-	return disponibles
+	return workerInActive
 }
 
 func Start() {

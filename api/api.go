@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/hex"
+
 	"fmt"
 	"image"
 	"image/jpeg"
@@ -29,15 +30,6 @@ var info = gin.H{
 }
 
 var tokens = make(map[string]string)
-
-type savedImages struct {
-	image_file_name string
-	image_ID        string
-	image_type      string
-}
-
-var arrayImages []savedImages
-var imgIds []string
 
 func Start() {
 
@@ -94,16 +86,18 @@ func status(c *gin.Context) {
 	exist, user, _ := auth(c)
 
 	if exist == true {
-		var lista string
+		wk := strings.Split(controller.Active_workloads(), "/")
+		var wkClean []string
 
-		lista = controller.Active_workloads()
+		for i := range wk {
+			if wk[i] != "" {
+				wkClean = append(wkClean, wk[i])
+			}
 
-		var trabajador []string
-
-		trabajador = strings.Split(lista, "/")
+		}
 
 		current := time.Now()
-		c.JSON(http.StatusOK, gin.H{"message": "Hi " + user + ", the DPIP System is Up and Running", "time": current.Format("2006-01-02 15:04:05"), "active": trabajador})
+		c.JSON(http.StatusOK, gin.H{"message": "Hi " + user + ", the DPIP System is Up and Running", "time": current.Format("2006-01-02 15:04:05"), "active": wkClean})
 	} else {
 		c.JSON(http.StatusOK, gin.H{"message": "Invalid Token"})
 		c.AbortWithStatus(401)
@@ -118,18 +112,23 @@ func workloads(c *gin.Context) {
 
 		filter := c.PostForm("filter")
 		WKname := c.PostForm("WKname")
+		token := GenerateSecureToken(1)
 
 		if WKname == "" || filter == "" {
 			c.AbortWithStatus(401)
 			return
 		}
 
-		c.JSON(http.StatusOK, gin.H{"workload_id": "a1",
+		controller.SaveWorkload(WKname, token, true, filter)
+		imgId := controller.GetImgIDs(WKname)
+
+		c.JSON(http.StatusOK, gin.H{
+			"workload_id":     token,
 			"filter":          filter,
 			"workload_name":   WKname,
-			"status":          false,
+			"status":          true,
 			"running_jobs":    10,
-			"filtered_images": imgIds})
+			"filtered_images": imgId})
 
 	} else {
 
@@ -140,6 +139,7 @@ func workloads(c *gin.Context) {
 
 }
 
+// no funciona
 func specificWL(c *gin.Context) {
 
 	exist, _, _ := auth(c)
@@ -164,27 +164,23 @@ func images(c *gin.Context) {
 	exist, _, _ := auth(c)
 
 	if exist == true {
-		header, err := c.FormFile("file")
+		image, err := c.FormFile("file")
 
 		if err != nil {
 			c.AbortWithStatus(401)
 			return
 		}
-		size := strconv.Itoa(int(header.Size))
+		size := strconv.Itoa(int(image.Size))
+		token := GenerateSecureToken(3)
+		imgType := "Original"
 
-		img := savedImages{
-			image_file_name: header.Filename,
-			image_ID:        GenerateSecureToken(1),
-			image_type:      "original",
-		}
-
-		imgIds = append(imgIds, img.image_ID)
-		arrayImages = append(arrayImages, img)
+		controller.SaveImage(image.Filename, token, imgType)
 
 		//----------------
 		//modified(img)
 		//----------------
-		c.JSON(http.StatusOK, gin.H{"status": "SUCCESS", "Filename": header.Filename, "filesize": size + " bytes"})
+
+		c.JSON(http.StatusOK, gin.H{"status": "SUCCESS", "Filename": image.Filename, "filesize": size + " bytes"})
 	} else {
 		c.JSON(http.StatusOK, gin.H{"message": "Invalid Token"})
 		c.AbortWithStatus(401)
@@ -192,9 +188,10 @@ func images(c *gin.Context) {
 
 }
 
-func modified(header savedImages) {
+// no funciona
+func modified(imgName string) {
 
-	reader := base64.NewDecoder(base64.StdEncoding, strings.NewReader(header.image_file_name))
+	reader := base64.NewDecoder(base64.StdEncoding, strings.NewReader(imgName))
 	img, _, err := image.Decode(reader)
 	if err != nil {
 		log.Fatal(err)
@@ -221,6 +218,7 @@ func modified(header savedImages) {
 
 }
 
+// no funciona
 func download(c *gin.Context) {
 
 	exist, user, _ := auth(c)
