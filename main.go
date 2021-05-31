@@ -11,6 +11,7 @@ import (
 	"github.com/ChavezJan/dc-final/scheduler"
 )
 
+//export GO111MODULE=off
 func main() {
 	log.Println("Welcome to the Distributed and Parallel Image Processing System")
 

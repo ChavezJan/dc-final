@@ -2,10 +2,11 @@ package scheduler
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"time"
 
-	pb "github.com/CodersSquad/dc-final/proto"
+	pb "github.com/ChavezJan/dc-final/proto"
 	"google.golang.org/grpc"
 )
 
@@ -13,6 +14,23 @@ import (
 //	address     = "localhost:50051"
 //	defaultName = "world"
 //)
+
+func Active_workloads() string {
+	var disponibles string
+
+	fmt.Println("aqui estoy ")
+
+	for i := 0; i < 5; i++ {
+		/*
+			checar si esta disponible
+			concatenar los trabajadores acticos con su ID
+		*/
+		disponibles += "listas"
+		disponibles += "/"
+	}
+
+	return disponibles
+}
 
 type Job struct {
 	Address string
@@ -30,6 +48,7 @@ func schedule(job Job) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
+	// reparticion de trabajo a los workers
 	r, err := c.SayHello(ctx, &pb.HelloRequest{Name: job.RPCName})
 	if err != nil {
 		log.Fatalf("could not greet: %v", err)

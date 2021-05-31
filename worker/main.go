@@ -60,6 +60,7 @@ func joinCluster() {
 	}
 
 	log.Printf("Connecting to controller on: %s", controllerAddress)
+
 	if err = sock.Dial(controllerAddress); err != nil {
 		die("can't dial on sub socket: %s", err.Error())
 	}
