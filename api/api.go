@@ -61,7 +61,9 @@ func login(c *gin.Context) {
 	tokens[user] = token
 
 	if _, userOk := info[user]; userOk {
-		c.JSON(http.StatusOK, gin.H{"message": "Hi " + user + " welcome to the DPIP System", "token": tokens[user]})
+		c.JSON(http.StatusOK, gin.H{
+			"message": "Hi " + user + " welcome to the DPIP System",
+			"token":   tokens[user]})
 	} else {
 		c.AbortWithStatus(401)
 	}
@@ -74,13 +76,15 @@ func logout(c *gin.Context) {
 	if exist == true {
 		delete(tokens, user)
 		c.AbortWithStatus(401)
-		c.JSON(http.StatusOK, gin.H{"message": "Bye " + user + ", your token has been revoked"})
+		c.JSON(http.StatusOK, gin.H{
+			"message": "Bye " + user + ", your token has been revoked"})
 	} else {
 		c.JSON(http.StatusOK, gin.H{"message": "Invalid Token"})
 		c.AbortWithStatus(401)
 	}
 }
 
+// regresa un JSON con el tiempo, un mensaje y los workers activos
 func status(c *gin.Context) {
 
 	exist, user, _ := auth(c)
@@ -97,7 +101,10 @@ func status(c *gin.Context) {
 		}
 
 		current := time.Now()
-		c.JSON(http.StatusOK, gin.H{"message": "Hi " + user + ", the DPIP System is Up and Running", "time": current.Format("2006-01-02 15:04:05"), "active": wkClean})
+		c.JSON(http.StatusOK, gin.H{
+			"message": "Hi " + user + ", the DPIP System is Up and Running",
+			"time":    current.Format("2006-01-02 15:04:05"),
+			"active":  wkClean})
 	} else {
 		c.JSON(http.StatusOK, gin.H{"message": "Invalid Token"})
 		c.AbortWithStatus(401)
@@ -112,21 +119,29 @@ func workloads(c *gin.Context) {
 
 		filter := c.PostForm("filter")
 		WKname := c.PostForm("WKname")
-		token := GenerateSecureToken(1)
+
+		if controller.GetWorkers(WKname) {
+			c.JSON(http.StatusOK, gin.H{"message": "Ese trabajador ya trabaja aqui"})
+			c.AbortWithStatus(401)
+			return
+		}
+
+		token := GenerateSecureToken(4)
 
 		if WKname == "" || filter == "" {
 			c.AbortWithStatus(401)
 			return
 		}
 
-		controller.SaveWorkload(WKname, token, true, filter)
+		controller.SaveWorkload(WKname, token, false, filter)
 		imgId := controller.GetImgIDs(WKname)
+		wkStatus := controller.GetStatus(WKname)
 
 		c.JSON(http.StatusOK, gin.H{
 			"workload_id":     token,
 			"filter":          filter,
 			"workload_name":   WKname,
-			"status":          true,
+			"status":          wkStatus,
 			"running_jobs":    10,
 			"filtered_images": imgId})
 
@@ -149,7 +164,9 @@ func specificWL(c *gin.Context) {
 		test := c.GetHeader("data")
 		test2, test3 := c.GetQuery("id")
 
-		c.JSON(http.StatusOK, gin.H{"message": "Hi " + name + " - " + test + test2, "bool": test3})
+		c.JSON(http.StatusOK, gin.H{
+			"message": "Hi " + name + " - " + test + test2,
+			"bool":    test3})
 
 	} else {
 
@@ -171,7 +188,7 @@ func images(c *gin.Context) {
 			return
 		}
 		size := strconv.Itoa(int(image.Size))
-		token := GenerateSecureToken(3)
+		token := GenerateSecureToken(4)
 		imgType := "Original"
 
 		controller.SaveImage(image.Filename, token, imgType)
@@ -180,7 +197,10 @@ func images(c *gin.Context) {
 		//modified(img)
 		//----------------
 
-		c.JSON(http.StatusOK, gin.H{"status": "SUCCESS", "Filename": image.Filename, "filesize": size + " bytes"})
+		c.JSON(http.StatusOK, gin.H{
+			"status":   "SUCCESS",
+			"Filename": image.Filename,
+			"filesize": size + " bytes"})
 	} else {
 		c.JSON(http.StatusOK, gin.H{"message": "Invalid Token"})
 		c.AbortWithStatus(401)
@@ -224,8 +244,9 @@ func download(c *gin.Context) {
 	exist, user, _ := auth(c)
 	if exist == true {
 
-		current := time.Now()
-		c.JSON(http.StatusOK, gin.H{"message": "Hi " + user + ", the DPIP System is Up and Running", "time": current.Format("2006-01-02 15:04:05"), "active": exist})
+		c.JSON(http.StatusOK, gin.H{
+			"message": "Hi " + user + ", su descarga esta activa",
+			"active":  true})
 
 	} else {
 

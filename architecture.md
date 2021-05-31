@@ -1,2 +1,3 @@
-Architecture Document
-=====================
+# Architecture Document
+
+![architecture](images/architecture.jpeg)

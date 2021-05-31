@@ -45,6 +45,15 @@ func SaveWorkload(name string, token string, status bool, filtro string) {
 	workloadCtrl = append(workloadCtrl, worker)
 }
 
+func GetWorkers(name string) bool {
+	for i := range workloadCtrl {
+		if workloadCtrl[i].workload_name == name {
+			return true
+		}
+	}
+	return false
+}
+
 func GetImgIDs(wkName string) []string {
 
 	for i := range images {
@@ -54,6 +63,7 @@ func GetImgIDs(wkName string) []string {
 			for x := range workloadCtrl {
 				if workloadCtrl[x].workload_name == wkName {
 					workloadCtrl[x].imgEditada = append(workloadCtrl[x].imgEditada, images[i].image_ID)
+					workloadCtrl[x].wl_status = !workloadCtrl[x].wl_status
 					return workloadCtrl[x].imgEditada
 				}
 			}
@@ -61,6 +71,16 @@ func GetImgIDs(wkName string) []string {
 		}
 	}
 	return nil
+}
+func GetStatus(wkName string) bool {
+
+	for i := range workloadCtrl {
+		if workloadCtrl[i].workload_name == wkName {
+			return workloadCtrl[i].wl_status
+		}
+	}
+
+	return false
 }
 
 func SaveImage(name string, token string, imgType string) {
